@@ -1,6 +1,6 @@
-mod cli;
-mod formatter;
-mod search;
+use minigrep::cli;
+use minigrep::formatter;
+use minigrep::search;
 
 use clap::Parser;
 use std::process;
