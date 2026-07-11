@@ -26,22 +26,30 @@ pub fn compile_regex(pattern: &str, ignore_case: bool) -> Result<Regex, regex::E
 }
 
 // searches the pattern on a single file and returns matches
-pub fn search_file(regex: &Regex, file_path: &Path) -> io::Result<Vec<Match>> {
+pub fn search_file(regex: &Regex, file_path: &Path, invert_match: bool) -> io::Result<Vec<Match>> {
     let file_content = fs::read_to_string(file_path)?;
     let file_name = file_path.display().to_string();
 
     let mut results = Vec::new();
 
     for (index, line_content) in file_content.lines().enumerate() {
-        if let Some(pattern_match) = regex.find(line_content) {
-            results.push(Match {
-                file: file_name.clone(),
-                line_number: index + 1,
-                content: line_content.to_string(),
-                start: pattern_match.start(),
-                end: pattern_match.end(),
-            })
+        let result = regex.find(line_content);
+
+        if invert_match == result.is_some() {
+            continue;
         }
+
+        let (start, end) = result
+            .map(|m| (m.start(), m.end()))
+            .unwrap_or((0, line_content.len()));
+
+        results.push(Match {
+            file: file_name.clone(),
+            line_number: index + 1,
+            content: line_content.to_string(),
+            start,
+            end,
+        })
     }
 
     Ok(results)
@@ -62,7 +70,7 @@ pub fn collect_files(paths: &[String], recursive: bool) -> Vec<String> {
                 }
             }
         } else if path.is_dir() {
-            eprint!(
+            eprintln!(
                 "minigrep: {} its a directory. Use -r for recursive search",
                 path.display()
             )
