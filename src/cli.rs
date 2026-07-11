@@ -19,7 +19,7 @@ pub struct Arguments {
     pub count: bool,
 
     #[arg(short = 'l', long = "show-line", default_value_t = true)]
-    pub line_number: bool,
+    pub show_line_number: bool,
 
     #[arg(short = 'v', long = "invert-match", default_value_t = false)]
     pub invert_match: bool,
