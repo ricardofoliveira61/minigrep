@@ -23,4 +23,13 @@ pub struct Arguments {
 
     #[arg(short = 'v', long = "invert-match", default_value_t = false)]
     pub invert_match: bool,
+
+    #[arg(short = 'A', long = "after-context")]
+    pub after_context: Option<usize>,
+
+    #[arg(short = 'B', long = "before-context")]
+    pub before_contex: Option<usize>,
+
+    #[arg(short = 'C', long = "context")]
+    pub contex: Option<usize>,
 }
