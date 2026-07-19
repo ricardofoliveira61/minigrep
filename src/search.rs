@@ -10,7 +10,7 @@ pub mod utils;
 pub use regex::compile_regex;
 pub use utils::SearchLine;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct SearchResult {
     pub file_name: String,
     pub lines: Vec<SearchLine>,
