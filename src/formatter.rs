@@ -1,31 +1,41 @@
-use crate::search::Match;
+use crate::search::{SearchLine, SearchResult};
 use colored::*;
+use std::fmt::Write;
 
-pub fn show_match(pattern_match: &Match, show_file: bool, show_number: bool) {
-    let mut output = String::new();
+pub fn show_match(pattern_match: &SearchResult, show_file: bool, show_number: bool) {
+    for line in &pattern_match.lines {
+        let mut output = String::new();
 
-    // show file name in magenta
-    if show_file {
-        output.push_str(&format!("{}:", pattern_match.file.magenta()));
+        // show file name in magenta
+        if show_file {
+            write!(output, "{}: ", pattern_match.file_name.magenta()).unwrap();
+        }
+
+        //show line number in green
+        if show_number {
+            write!(output, "{}: ", line.get_line_number().to_string().green()).unwrap();
+        }
+
+        match line {
+            SearchLine::ContextLine { content, .. } => {
+                output.push_str(content);
+            }
+            SearchLine::Match {
+                content,
+                start,
+                end,
+                ..
+            } => {
+                let before = &content[..*start];
+                let pattern = &content[*start..*end];
+                let after = &content[*end..];
+
+                write!(output, "{}{}{}", before, pattern.red().bold(), after).unwrap();
+            }
+        }
+
+        println!("{}", output);
     }
-
-    //show line number in green
-    if show_number {
-        output.push_str(&format!(
-            "{}:",
-            pattern_match.line_number.to_string().green()
-        ));
-    }
-
-    // line with the matched pattern in bold/red
-    let line = &pattern_match.content;
-    let before = &line[..pattern_match.start];
-    let pattern = &line[pattern_match.start..pattern_match.end];
-    let after = &line[pattern_match.end..];
-
-    output.push_str(&format!("{}{}{}", before, pattern.red().bold(), after));
-
-    println!("{}", output);
 }
 
 // show the number of matches per file
