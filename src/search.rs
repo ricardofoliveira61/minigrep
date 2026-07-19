@@ -1,58 +1,42 @@
-use regex::Regex;
+use ::regex::Regex;
 use std::fs;
 use std::io;
 use std::path::Path;
 use walkdir::WalkDir;
 
-// Represents a pattern match inside a file
+pub mod regex;
+pub mod utils;
+
+pub use regex::compile_regex;
+pub use utils::SearchLine;
+
 #[derive(Debug)]
-pub struct Match {
-    pub file: String,
-    pub line_number: usize,
-    pub content: String,
-    pub start: usize,
-    pub end: usize,
-}
-
-// compiles the regext pattern
-pub fn compile_regex(pattern: &str, ignore_case: bool) -> Result<Regex, regex::Error> {
-    let final_pattern = if ignore_case {
-        format!("(?i){}", pattern)
-    } else {
-        pattern.to_string()
-    };
-
-    Regex::new(&final_pattern)
+pub struct SearchResult {
+    pub file_name: String,
+    pub lines: Vec<SearchLine>,
 }
 
 // searches the pattern on a single file and returns matches
-pub fn search_file(regex: &Regex, file_path: &Path, invert_match: bool) -> io::Result<Vec<Match>> {
+pub fn search_file(
+    regex: &Regex,
+    file_path: &Path,
+    invert_match: bool,
+    before_context: Option<usize>,
+    after_context: Option<usize>,
+    context: Option<usize>,
+) -> io::Result<SearchResult> {
     let file_content = fs::read_to_string(file_path)?;
     let file_name = file_path.display().to_string();
 
-    let mut results = Vec::new();
+    let after = after_context.unwrap_or(0).max(context.unwrap_or(0));
+    let before = before_context.unwrap_or(0).max(context.unwrap_or(0));
 
-    for (index, line_content) in file_content.lines().enumerate() {
-        let result = regex.find(line_content);
+    let results = utils::search_content(&file_content, regex, invert_match, before, after);
 
-        if invert_match == result.is_some() {
-            continue;
-        }
-
-        let (start, end) = result
-            .map(|m| (m.start(), m.end()))
-            .unwrap_or((0, line_content.len()));
-
-        results.push(Match {
-            file: file_name.clone(),
-            line_number: index + 1,
-            content: line_content.to_string(),
-            start,
-            end,
-        })
-    }
-
-    Ok(results)
+    Ok(SearchResult {
+        file_name,
+        lines: results,
+    })
 }
 
 pub fn collect_files(paths: &[String], recursive: bool) -> Vec<String> {
