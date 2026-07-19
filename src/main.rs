@@ -12,7 +12,7 @@ fn main() {
     let pattern_regex = match search::compile_regex(&args.pattern, args.ignore_case) {
         Ok(r) => r,
         Err(e) => {
-            eprint!("Error on the regex pattern '{}':{}", args.pattern, e);
+            eprintln!("Error on the regex pattern '{}':{}", args.pattern, e);
             process::exit(1);
         }
     };
@@ -20,7 +20,7 @@ fn main() {
     let file_paths = search::collect_files(&args.paths, args.recursive);
 
     if file_paths.is_empty() {
-        eprint!("minigrep: no file found to match pattern.");
+        eprintln!("minigrep: no file found to match pattern.");
         process::exit(1);
     }
 
@@ -30,18 +30,23 @@ fn main() {
     for file_path in &file_paths {
         let file_path = std::path::Path::new(file_path);
 
-        match search::search_file(&pattern_regex, file_path) {
+        match search::search_file(
+            &pattern_regex,
+            file_path,
+            args.invert_match,
+            args.before_contex,
+            args.after_context,
+            args.contex,
+        ) {
             Ok(results) => {
                 if args.count {
-                    formatter::show_count(&file_path.display().to_string(), results.len());
+                    formatter::show_count(&file_path.display().to_string(), results.lines.len());
                 } else {
-                    for result in &results {
-                        formatter::show_match(result, show_file_name, args.line_number);
-                    }
+                    formatter::show_match(&results, show_file_name, args.show_line_number);
                 }
             }
             Err(e) => {
-                eprint!("minigrep: error reading '{}':{}", file_path.display(), e);
+                eprintln!("minigrep: error reading '{}':{}", file_path.display(), e);
                 error_found = true;
             }
         }
