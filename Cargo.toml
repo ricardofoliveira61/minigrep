@@ -8,3 +8,4 @@ clap = { version = "4", features = ["derive"] }
 regex = "1"
 walkdir = "2"
 colored = "2"
+tempfile = "3"
